@@ -1,0 +1,27 @@
+---
+- name: Install Traefik
+  hosts: homelab
+  become: false
+
+  tasks:
+    - name: Add Traefik helm repo
+      shell: helm repo add traefik https://traefik.github.io/charts
+      register: result
+      changed_when: "'already exists' not in result.stdout"
+
+    - name: Update helm repos
+      shell: helm repo update
+
+    - name: Create traefik namespace
+      shell: kubectl create namespace traefik --dry-run=client -o yaml | kubectl apply -f -
+
+    - name: Install Traefik
+      shell: |
+        helm upgrade --install traefik traefik/traefik \
+          --namespace traefik \
+          --set service.type=LoadBalancer \
+          --set ports.web.port=80 \
+          --set ports.websecure.port=443 \
+          --set logs.general.level=INFO
+      args:
+        creates: /srv/k3s/server/manifests/traefik-helm.yaml

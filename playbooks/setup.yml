@@ -1,0 +1,23 @@
+---
+- name: Initial homelab setup
+  hosts: homelab
+  become: true
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Install essential packages
+      apt:
+        name:
+          - curl
+          - wget
+          - git
+          - htop
+          - vim
+          - ca-certificates
+          - gnupg
+          - lsb-release
+        state: present

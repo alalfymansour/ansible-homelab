@@ -1,0 +1,30 @@
+---
+- name: Install Prometheus and Grafana
+  hosts: homelab
+  become: false
+
+  tasks:
+    - name: Add Prometheus helm repo
+      shell: helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+      register: result
+      changed_when: "'already exists' not in result.stdout"
+
+    - name: Add Grafana helm repo
+      shell: helm repo add grafana https://grafana.github.io/helm-charts
+      register: result
+      changed_when: "'already exists' not in result.stdout"
+
+    - name: Update helm repos
+      shell: helm repo update
+
+    - name: Create monitoring namespace
+      shell: kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
+
+    - name: Install kube-prometheus-stack
+      shell: |
+        helm upgrade --install prometheus prometheus-community/kube-prometheus-stack \
+          --namespace monitoring \
+          --set grafana.adminPassword=admin123 \
+          --set prometheus.prometheusSpec.retention=7d
+      args:
+        creates: /srv/k3s/server/manifests/prometheus.yaml
